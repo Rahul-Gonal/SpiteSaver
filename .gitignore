@@ -1,0 +1,10 @@
+.env
+.git/
+.github/
+venv/
+app/__pycache__
+__pycache__/
+*.pyc
+db.sqlite
+migrations/
+.idea/
