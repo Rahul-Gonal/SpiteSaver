@@ -1,0 +1,255 @@
+{% set progress_pct=100 %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past Goals - Spite Saver</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/icon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+</head>
+<body class="past-goals-body">
+
+    <!-- TOP NAVIGATION (Mirrors Reference Layout) -->
+    <header class="top-bar sticky-topbar">
+        <a href="{{ url_for('index.index_page') }}" class="back-dashboard-link">
+            <span>&lsaquo;</span> Dashboard
+        </a>
+
+        <a href="{{ url_for('index.index_page') }}" class="logo">
+            <img src="{{ url_for('static', filename='assets/icon.png') }}" alt="Spite Saver Icon" class="logo-icon">
+            <span>Spite Saver</span>
+        </a>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="history-page-container">
+        <!-- Page Header -->
+        <div class="history-page-header">
+            <div>
+                <h1 class="history-main-title">Goal history</h1>
+                <p class="history-main-subtitle">Every savings target conquered out of spite, grouped by goal.</p>
+            </div>
+            <div class="lifetime-pill-box">
+                <span class="lifetime-pill-label">Lifetime Rescued</span>
+                <span class="lifetime-pill-amount">₹{{ "{:,.0f}".format(lifetime_saved) }}</span>
+            </div>
+        </div>
+
+        {% if past_goals_data|length == 0 %}
+            <div class="empty-ledger">
+                <p class="empty-title">No conquered goals in your trophy room yet.</p>
+                <p class="empty-subtitle">Hit 100% on your active piggy bank on the dashboard to immortalize your first labeled trophy pig here!</p>
+            </div>
+        {% else %}
+            {% for item in past_goals_data %}
+                <section class="goal-group-section">
+                    
+                    <!-- Section Header with Labeled Piggy Bank -->
+                    <div class="goal-group-header">
+                        <div class="labeled-pig-unit">
+                            <div class="mini-pig-wrapper">
+                                <div class="mini-crown">👑</div>
+                                <!-- Same Glass-Ceramic Piggy Bank SVG from Main Page -->
+                                 <svg class="piggy-svg 3d-rendered" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Dynamic Fill Clip for the Glass Sphere -->
+        <clipPath id="glassSphereClip">
+            <circle cx="160" cy="170" r="100" />
+        </clipPath>
+
+        <!-- 3D Gold Gradients -->
+        <linearGradient id="goldFront" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFE259"/>
+            <stop offset="100%" stop-color="#FFA751"/>
+        </linearGradient>
+        
+        <linearGradient id="goldSide" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#D48020"/>
+            <stop offset="100%" stop-color="#8A4A0B"/>
+        </linearGradient>
+
+        <linearGradient id="goldDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B86A14"/>
+            <stop offset="100%" stop-color="#5C3105"/>
+        </linearGradient>
+
+        <!-- Glass Volume Gradients -->
+        <radialGradient id="glassBody" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7"/>
+            <stop offset="50%" stop-color="#F8F5EE" stop-opacity="0.1"/>
+            <stop offset="90%" stop-color="#4A2B75" stop-opacity="0.2"/> <!-- Subtle purple environment reflection -->
+            <stop offset="100%" stop-color="#1A0B2E" stop-opacity="0.5"/>
+        </radialGradient>
+
+        <!-- Drop shadow for the gold parts -->
+        <filter id="dropShadow" x="-20%" y="-20%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
+        </filter>
+        
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="10" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+    </defs>
+
+    <!-- 1. Ambient Base / Platform (Matching reference) -->
+    <ellipse cx="160" cy="290" rx="110" ry="20" fill="#8B2538"/>
+    <ellipse cx="160" cy="280" rx="110" ry="20" fill="#C23048"/>
+    
+    <!-- Gold Stand base -->
+    <path d="M110 265 L115 285 L205 285 L210 265 Z" fill="url(#goldSide)"/>
+    <ellipse cx="160" cy="265" rx="50" ry="12" fill="url(#goldFront)"/>
+
+    <!-- 2. Back Winding Key / Tail (Rendered behind the glass) -->
+    <g filter="url(#dropShadow)">
+        <!-- 3D Depth -->
+        <ellipse cx="260" cy="165" rx="18" ry="35" fill="url(#goldSide)"/>
+        <!-- Front Face -->
+        <ellipse cx="270" cy="155" rx="18" ry="35" fill="url(#goldFront)"/>
+        <!-- Hole -->
+        <ellipse cx="270" cy="155" rx="6" ry="14" fill="#5C3105"/>
+        <!-- Connection rod -->
+        <path d="M255 155 L220 165 L220 175 L255 165 Z" fill="url(#goldSide)"/>
+    </g>
+
+    <!-- 3. The Inner Coin/Liquid Fill (Clipped to the Glass Sphere) -->
+    <g clip-path="url(#glassSphereClip)">
+        <!-- Dynamic Fill Calculation -->
+        {% set fill_height = (progress_pct * 2.0)|int %}
+        {% set fill_y = 270 - fill_height %}
+        
+        <!-- The "Liquid Gold" body -->
+        <rect x="50" y="{{ fill_y }}" width="220" height="{{ fill_height }}" fill="url(#goldFront)" opacity="0.95"/>
+        
+        <!-- Top surface reflection of the coins for 3D depth -->
+        <ellipse cx="160" cy="{{ fill_y }}" rx="100" ry="15" fill="#FFF0A8" opacity="0.8"/>
+        
+        <!-- Subtle internal glow -->
+        <ellipse cx="160" cy="270" rx="80" ry="30" fill="#FFA751" filter="url(#glow)"/>
+    </g>
+
+    <!-- 4. The Main Glass Sphere -->
+    <!-- Inner thickness ring -->
+    <circle cx="160" cy="170" r="98" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.4"/>
+    <!-- Volumetric sphere -->
+    <circle cx="160" cy="170" r="100" fill="url(#glassBody)"/>
+    <!-- Outer rim light -->
+    <circle cx="160" cy="170" r="100" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6"/>
+
+    <!-- 5. Sharp Glass Specular Highlights (The glossy reflections) -->
+    <!-- Top major curve reflection -->
+    <path d="M 85 105 A 90 90 0 0 1 230 100 A 100 100 0 0 0 110 120 Z" fill="#FFFFFF" opacity="0.85"/>
+    <!-- Dot highlight -->
+    <ellipse cx="190" cy="105" rx="14" ry="10" transform="rotate(-20 190 105)" fill="#FFFFFF" opacity="0.9"/>
+    <!-- Bottom ambient bounce light -->
+    <path d="M 90 220 A 90 90 0 0 0 230 220 A 95 95 0 0 1 100 210 Z" fill="#FFFFFF" opacity="0.4"/>
+
+    <!-- 6. 3D Gold Top Cap / Slot -->
+    <g filter="url(#dropShadow)">
+        <!-- Base Depth -->
+        <path d="M125 75 L125 85 Q160 95 195 85 L195 75 Z" fill="url(#goldSide)"/>
+        <!-- Top Face -->
+        <ellipse cx="160" cy="75" rx="35" ry="12" fill="url(#goldFront)"/>
+        <!-- Coin Slot -->
+        <rect x="145" y="72" width="30" height="6" rx="3" fill="#5C3105"/>
+    </g>
+
+    <!-- 7. 3D Gold Glasses -->
+    <g filter="url(#dropShadow)">
+        <!-- Left Lens Depth -->
+        <path d="M85 125 L115 130 L105 160 Z" fill="url(#goldSide)"/>
+        <!-- Left Lens Front -->
+        <path d="M80 115 L110 120 L100 150 Z" fill="url(#goldFront)"/>
+        
+        <!-- Right Lens Depth -->
+        <path d="M130 130 L160 125 L145 160 Z" fill="url(#goldSide)"/>
+        <!-- Right Lens Front -->
+        <path d="M125 120 L155 115 L140 150 Z" fill="url(#goldFront)"/>
+        
+        <!-- Bridge -->
+        <path d="M105 123 L135 123 L135 128 L105 128 Z" fill="url(#goldFront)"/>
+    </g>
+
+    <!-- 8. Massive 3D Gold Snout (The focal point) -->
+    <g filter="url(#dropShadow)">
+        <!-- Cylinder Side/Depth (Extrusion) -->
+        <ellipse cx="115" cy="190" rx="35" ry="42" fill="url(#goldSide)"/>
+        <path d="M115 148 L95 142 L95 226 L115 232 Z" fill="url(#goldSide)"/>
+        
+        <!-- Front Face -->
+        <ellipse cx="95" cy="184" rx="35" ry="42" fill="url(#goldFront)"/>
+        
+        <!-- Deep Nostrils (Pill shapes) -->
+        <rect x="75" y="165" width="8" height="35" rx="4" fill="url(#goldDark)"/>
+        <rect x="95" y="165" width="8" height="35" rx="4" fill="url(#goldDark)"/>
+        
+        <!-- Front Face Highlight (Enhances the bevel) -->
+        <ellipse cx="90" cy="155" rx="20" ry="8" transform="rotate(-15 90 155)" fill="#FFFFFF" opacity="0.6"/>
+    </g>
+</svg>                           </div>
+                            <!-- Label Pill Under Pig -->
+                            <span class="pig-goal-label">{{ item.goal.title }}</span>
+                        </div>
+
+                        <div class="goal-group-meta">
+                            <h2 class="goal-group-title">{{ item.goal.title }}</h2>
+                            <p class="goal-group-stats">
+                                Conquered in <strong>{{ item.duration_days }} {{ 'day' if item.duration_days == 1 else 'days' }}</strong>
+                                &bull; Top Resisted Habit: <strong>{{ item.top_tag }}</strong> (₹{{ "{:,.0f}".format(item.top_tag_sum) }})
+                            </p>
+                        </div>
+
+                        <div class="goal-group-total">
+                            <span class="goal-total-badge">₹{{ "{:,.0f}".format(item.goal.current_amount) }} / ₹{{ "{:,.0f}".format(item.goal.target_amount) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Card Rows (Structured like Reference Image) -->
+                    <div class="history-rows-stack">
+                        <!-- Summary Milestone Card Row -->
+                        <div class="history-row-card milestone-row-card">
+                            <div class="row-col-date">
+                                <span class="row-day-label">{{ item.goal.completed_at.strftime('%A')|upper if item.goal.completed_at else 'COMPLETED' }}</span>
+                                <span class="row-date-value">{{ item.goal.completed_at.strftime('%b %d, %Y') if item.goal.completed_at else 'Victory' }}</span>
+                            </div>
+                            <div class="row-col-middle">
+                                <span class="row-desc-title">🏆 Goal Target Reached ({{ item.saves_count }} spite saves logged)</span>
+                            </div>
+                            <div class="row-col-right">
+                                <span class="row-status-present">Achieved &bull; ₹{{ "{:,.0f}".format(item.goal.target_amount) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Individual Transactions inside this Completed Goal -->
+                        {% for tx in item.transactions %}
+                        <div class="history-row-card">
+                            <div class="row-col-date">
+                                <span class="row-day-label">{{ tx.created_at.strftime('%A')|upper }}</span>
+                                <span class="row-date-value">{{ tx.created_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+
+                            <div class="row-col-middle">
+                                <span class="row-time-range">{{ tx.created_at.strftime('%I:%M %p') }} &mdash; {{ tx.description }}</span>
+                                <span class="tx-tag {{ 'tag-save' if tx.tx_type == 'save' else 'tag-spend' }}">{{ tx.tag }}</span>
+                            </div>
+
+                            <div class="row-col-right">
+                                <span class="{{ 'row-status-present' if tx.tx_type == 'save' else 'row-status-absent' }}">
+                                    {{ '+' if tx.tx_type == 'save' else '-' }} ₹{{ "{:,.0f}".format(tx.amount) }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                </section>
+            {% endfor %}
+        {% endif %}
+    </main>
+
+</body>
+</html>

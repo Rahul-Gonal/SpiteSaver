@@ -1,7 +1,8 @@
 """
-Created on <DateTime>
+Created on 28 October 2026 08:00:00 AM IST
 
 @uthor: $ujay $imha
+contributors: rgo75, $aket νiraj
 """
 
 from flask import Flask
@@ -27,5 +28,8 @@ def create_app(config=DevelopmentConfig):
 
     register_blueprints(app)
     register_extensions(app)
+
+    with app.app_context():
+        db.create_all()  # Create database tables for our data models
 
     return app
