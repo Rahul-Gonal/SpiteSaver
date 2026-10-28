@@ -48,9 +48,11 @@ app/
     styles/
       main.css
   templates/
+    index.html
     login.html
     signup.html
     verification_email.html
+    verification.html
   __init__.py
   auth.py
   exts.py
@@ -66,6 +68,537 @@ shelltools.py
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/templates/index.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Spite Saver</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/icon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+    <!-- 1. TOP BAR (Fixed) -->
+    <header class="top-bar sticky-topbar">
+        <a href="{{ url_for('index.index_page') }}" class="logo">
+            <img src="{{ url_for('static', filename='assets/icon.png') }}" alt="Spite Saver Icon" class="logo-icon">
+            <span>Spite Saver</span>
+        </a>
+
+        <div class="topbar-actions">
+            <button type="button" class="btn-archive" onclick="toggleDrawer(true)">
+                <span>🏆 Past Goals</span>
+                <span class="badge-count">{{ past_goals_data|length }}</span>
+            </button>
+            <div class="user-pill" title="{{ user.email }}">
+                <span class="avatar-circle">{{ user.username[0]|upper }}</span>
+                <span class="username-label">{{ user.username }}</span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">Log Out</a>
+        </div>
+    </header>
+
+    <!-- 2. STICKY HERO STAGE (Piggy Bank + Inline Goal Monitor) -->
+    <section class="hero-stage" id="heroStage">
+        <div class="piggy-wrapper {% if progress_pct >= 100 %}piggy-victory{% elif progress_pct >= 75 %}piggy-glow{% endif %}" id="piggyContainer">
+            
+            <!-- Floating Scroll Coin Indicator -->
+            <div id="floatingCoin" class="floating-coin">₹</div>
+
+            {% if progress_pct >= 100 %}
+                <div class="victory-crown" title="Goal Unlocked!">👑</div>
+            {% endif %}
+
+            <!-- Translucent Glass-Ceramic Piggy Bank SVG -->
+ <svg class="piggy-svg 3d-rendered" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Dynamic Fill Clip for the Glass Sphere -->
+        <clipPath id="glassSphereClip">
+            <circle cx="160" cy="170" r="100" />
+        </clipPath>
+
+        <!-- 3D Gold Gradients -->
+        <linearGradient id="goldFront" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFE259"/>
+            <stop offset="100%" stop-color="#FFA751"/>
+        </linearGradient>
+        
+        <linearGradient id="goldSide" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#D48020"/>
+            <stop offset="100%" stop-color="#8A4A0B"/>
+        </linearGradient>
+
+        <linearGradient id="goldDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B86A14"/>
+            <stop offset="100%" stop-color="#5C3105"/>
+        </linearGradient>
+
+        <!-- Glass Volume Gradients -->
+        <radialGradient id="glassBody" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7"/>
+            <stop offset="50%" stop-color="#F8F5EE" stop-opacity="0.1"/>
+            <stop offset="90%" stop-color="#4A2B75" stop-opacity="0.2"/> <!-- Subtle purple environment reflection -->
+            <stop offset="100%" stop-color="#1A0B2E" stop-opacity="0.5"/>
+        </radialGradient>
+
+        <!-- Drop shadow for the gold parts -->
+        <filter id="dropShadow" x="-20%" y="-20%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
+        </filter>
+        
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="10" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+    </defs>
+
+    <!-- 1. Ambient Base / Platform (Matching reference) -->
+    <ellipse cx="160" cy="290" rx="110" ry="20" fill="#8B2538"/>
+    <ellipse cx="160" cy="280" rx="110" ry="20" fill="#C23048"/>
+    
+    <!-- Gold Stand base -->
+    <path d="M110 265 L115 285 L205 285 L210 265 Z" fill="url(#goldSide)"/>
+    <ellipse cx="160" cy="265" rx="50" ry="12" fill="url(#goldFront)"/>
+
+    <!-- 2. Back Winding Key / Tail (Rendered behind the glass) -->
+    <g filter="url(#dropShadow)">
+        <!-- 3D Depth -->
+        <ellipse cx="260" cy="165" rx="18" ry="35" fill="url(#goldSide)"/>
+        <!-- Front Face -->
+        <ellipse cx="270" cy="155" rx="18" ry="35" fill="url(#goldFront)"/>
+        <!-- Hole -->
+        <ellipse cx="270" cy="155" rx="6" ry="14" fill="#5C3105"/>
+        <!-- Connection rod -->
+        <path d="M255 155 L220 165 L220 175 L255 165 Z" fill="url(#goldSide)"/>
+    </g>
+
+    <!-- 3. The Inner Coin/Liquid Fill (Clipped to the Glass Sphere) -->
+    <g clip-path="url(#glassSphereClip)">
+        <!-- Dynamic Fill Calculation -->
+        {% set fill_height = (progress_pct * 2.0)|int %}
+        {% set fill_y = 270 - fill_height %}
+        
+        <!-- The "Liquid Gold" body -->
+        <rect x="50" y="{{ fill_y }}" width="220" height="{{ fill_height }}" fill="url(#goldFront)" opacity="0.95"/>
+        
+        <!-- Top surface reflection of the coins for 3D depth -->
+        <ellipse cx="160" cy="{{ fill_y }}" rx="100" ry="15" fill="#FFF0A8" opacity="0.8"/>
+        
+        <!-- Subtle internal glow -->
+        <ellipse cx="160" cy="270" rx="80" ry="30" fill="#FFA751" filter="url(#glow)"/>
+    </g>
+
+    <!-- 4. The Main Glass Sphere -->
+    <!-- Inner thickness ring -->
+    <circle cx="160" cy="170" r="98" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.4"/>
+    <!-- Volumetric sphere -->
+    <circle cx="160" cy="170" r="100" fill="url(#glassBody)"/>
+    <!-- Outer rim light -->
+    <circle cx="160" cy="170" r="100" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6"/>
+
+    <!-- 5. Sharp Glass Specular Highlights (The glossy reflections) -->
+    <!-- Top major curve reflection -->
+    <path d="M 85 105 A 90 90 0 0 1 230 100 A 100 100 0 0 0 110 120 Z" fill="#FFFFFF" opacity="0.85"/>
+    <!-- Dot highlight -->
+    <ellipse cx="190" cy="105" rx="14" ry="10" transform="rotate(-20 190 105)" fill="#FFFFFF" opacity="0.9"/>
+    <!-- Bottom ambient bounce light -->
+    <path d="M 90 220 A 90 90 0 0 0 230 220 A 95 95 0 0 1 100 210 Z" fill="#FFFFFF" opacity="0.4"/>
+
+    <!-- 6. 3D Gold Top Cap / Slot -->
+    <g filter="url(#dropShadow)">
+        <!-- Base Depth -->
+        <path d="M125 75 L125 85 Q160 95 195 85 L195 75 Z" fill="url(#goldSide)"/>
+        <!-- Top Face -->
+        <ellipse cx="160" cy="75" rx="35" ry="12" fill="url(#goldFront)"/>
+        <!-- Coin Slot -->
+        <rect x="145" y="72" width="30" height="6" rx="3" fill="#5C3105"/>
+    </g>
+
+    <!-- 7. 3D Gold Glasses -->
+    <g filter="url(#dropShadow)">
+        <!-- Left Lens Depth -->
+        <path d="M85 125 L115 130 L105 160 Z" fill="url(#goldSide)"/>
+        <!-- Left Lens Front -->
+        <path d="M80 115 L110 120 L100 150 Z" fill="url(#goldFront)"/>
+        
+        <!-- Right Lens Depth -->
+        <path d="M130 130 L160 125 L145 160 Z" fill="url(#goldSide)"/>
+        <!-- Right Lens Front -->
+        <path d="M125 120 L155 115 L140 150 Z" fill="url(#goldFront)"/>
+        
+        <!-- Bridge -->
+        <path d="M105 123 L135 123 L135 128 L105 128 Z" fill="url(#goldFront)"/>
+    </g>
+
+    <!-- 8. Massive 3D Gold Snout (The focal point) -->
+    <g filter="url(#dropShadow)">
+        <!-- Cylinder Side/Depth (Extrusion) -->
+        <ellipse cx="115" cy="190" rx="35" ry="42" fill="url(#goldSide)"/>
+        <path d="M115 148 L95 142 L95 226 L115 232 Z" fill="url(#goldSide)"/>
+        
+        <!-- Front Face -->
+        <ellipse cx="95" cy="184" rx="35" ry="42" fill="url(#goldFront)"/>
+        
+        <!-- Deep Nostrils (Pill shapes) -->
+        <rect x="75" y="165" width="8" height="35" rx="4" fill="url(#goldDark)"/>
+        <rect x="95" y="165" width="8" height="35" rx="4" fill="url(#goldDark)"/>
+        
+        <!-- Front Face Highlight (Enhances the bevel) -->
+        <ellipse cx="90" cy="155" rx="20" ry="8" transform="rotate(-15 90 155)" fill="#FFFFFF" opacity="0.6"/>
+    </g>
+</svg>
+        </div>
+
+        <!-- Inline Goal Monitor -->
+        <div class="goal-monitor-card">
+            <div class="goal-header-row">
+                <div class="goal-title-group">
+                    <span class="goal-title-text">"{{ goal.title }}"</span>
+                    {% if not goal.completed %}
+                        <button type="button" class="btn-icon-edit" onclick="toggleGoalEdit()" title="Edit Goal">✏️</button>
+                    {% else %}
+                        <span class="completed-pill">COMPLETED 🎉</span>
+                    {% endif %}
+                </div>
+                <div class="goal-Readout">
+                    <span class="current-amt">₹{{ "{:,.0f}".format(goal.current_amount) }}</span>
+                    <span class="target-divider">/</span>
+                    <span class="target-amt">₹{{ "{:,.0f}".format(goal.target_amount) }}</span>
+                </div>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill {% if goal.completed %}progress-complete{% endif %}" style="width: {{ progress_pct }}%;"></div>
+            </div>
+
+            <div class="goal-sub-row">
+                <span class="pct-label">{{ progress_pct }}% Funded</span>
+                {% if goal.completed %}
+                    <button type="button" class="btn-claim-goal" onclick="toggleResetModal(true)">
+                        ✨ Claim &amp; Start New Goal
+                    </button>
+                {% else %}
+                    <span class="spite-hint">Scroll through your ledger to replay every spite coin</span>
+                {% endif %}
+            </div>
+
+            <!-- Inline Popover Form for Editing Active Goal -->
+            {% if not goal.completed %}
+            <form method="POST" action="{{ url_for('index.edit_goal') }}" id="goalEditForm" class="goal-edit-popover hidden">
+                <input type="hidden" name="goal_id" value="{{ goal.id }}">
+                <div class="popover-fields">
+                    <div>
+                        <label class="form-label">Goal Name</label>
+                        <input type="text" name="title" value="{{ goal.title }}" class="form-control form-control-sm" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Target (₹)</label>
+                        <input type="number" step="1" min="100" name="target_amount" value="{{ goal.target_amount|int }}" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="popover-btns">
+                        <button type="submit" class="btn-save-sm">Update</button>
+                        <button type="button" class="btn-cancel-sm" onclick="toggleGoalEdit()">Cancel</button>
+                    </div>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- 3. SCROLLYTELLING HISTORY FEED -->
+    <main class="ledger-container">
+        <div class="ledger-header">
+            <h2>Spite &amp; Spend Ledger</h2>
+            <span class="ledger-count">{{ transactions|length }} entries</span>
+        </div>
+
+        {% if transactions|length == 0 %}
+            <div class="empty-ledger">
+                <p class="empty-title">Your piggy bank is waiting for its first spite coin.</p>
+                <p class="empty-subtitle">Skip an overpriced impulse buy or tap a quick-chip below to drop your first ₹ into the vault!</p>
+            </div>
+        {% else %}
+            <div class="timeline-feed">
+                {% for tx in transactions %}
+                    {% if tx.is_milestone %}
+                        <div class="milestone-banner">
+                            🏆 <strong>GOAL UNLOCKED:</strong> "{{ goal.title }}" (₹{{ "{:,.0f}".format(goal.target_amount) }} Achieved on {{ tx.created_at.strftime('%b %d') }})
+                        </div>
+                    {% endif %}
+
+                    <article class="ledger-item {{ 'item-save' if tx.tx_type == 'save' else 'item-spend' }}"
+                             data-tx-type="{{ tx.tx_type }}"
+                             data-tx-amount="{{ tx.amount }}">
+                        <div class="timeline-node">
+                            {% if tx.tx_type == 'save' %}🛡️{% else %}⚠️{% endif %}
+                        </div>
+
+                        <div class="ledger-card">
+                            <div class="ledger-card-left">
+                                <div class="tx-amount {{ 'amt-save' if tx.tx_type == 'save' else 'amt-spend' }}">
+                                    {{ '+' if tx.tx_type == 'save' else '-' }} ₹{{ "{:,.0f}".format(tx.amount) }}
+                                </div>
+                                <div class="tx-desc">{{ tx.description }}</div>
+                                <div class="tx-meta">
+                                    <span class="tx-tag {{ 'tag-save' if tx.tx_type == 'save' else 'tag-spend' }}">{{ tx.tag }}</span>
+                                    <span class="tx-time">{{ tx.created_at.strftime('%d %b, %I:%M %p') }}</span>
+                                </div>
+                            </div>
+
+                            <div class="ledger-card-right">
+                                <span class="coin-pill {{ 'coin-plus' if tx.tx_type == 'save' else 'coin-minus' }}">
+                                    {{ '+1 🪙' if tx.tx_type == 'save' else '-1 🪙' }}
+                                </span>
+                                <form method="POST" action="{{ url_for('index.delete_transaction', tx_id=tx.id) }}" class="undo-form">
+                                    <button type="submit" class="btn-undo" title="Undo entry">Undo</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </main>
+
+    <!-- 4. PERSISTENT BOTTOM COMMAND DOCK -->
+    <footer class="bottom-dock">
+        <div class="dock-inner">
+            <!-- 1-Tap Quick Spite Chips -->
+            <div class="quick-chips-bar">
+                <span class="chips-label">⚡ Quick Spite:</span>
+                <button type="button" class="spite-chip" onclick="quickFill('save', 150, 'Skipped Zomato / Swiggy Surge', '#FoodDelivery')">+₹150 Skipped Zomato</button>
+                <button type="button" class="spite-chip" onclick="quickFill('save', 60, 'Took Metro instead of Auto', '#Commute')">+₹60 Took Metro</button>
+                <button type="button" class="spite-chip" onclick="quickFill('save', 220, 'Made Filter Coffee at Home', '#DailyWin')">+₹220 Home Coffee</button>
+                <button type="button" class="spite-chip" onclick="quickFill('save', 499, 'Closed Late-Night Shopping Cart', '#Impulse')">+₹499 Skipped Cart</button>
+            </div>
+
+            <!-- Main Input Bar -->
+            <form method="POST" action="{{ url_for('index.add_transaction') }}" class="dock-form" id="txForm">
+                <input type="hidden" name="goal_id" value="{{ goal.id }}">
+                <input type="hidden" name="tx_type" id="txTypeInput" value="save">
+
+                <!-- Mode Segment Toggle -->
+                <div class="mode-toggle">
+                    <button type="button" id="btnModeSave" class="mode-btn active-save" onclick="setMode('save')">+ Save</button>
+                    <button type="button" id="btnModeSpend" class="mode-btn" onclick="setMode('spend')">- Spend</button>
+                </div>
+
+                <!-- Amount Field -->
+                <div class="amount-input-group">
+                    <span class="currency-prefix">₹</span>
+                    <input type="number" step="1" min="1" name="amount" id="amountInput" class="dock-input amount-field" placeholder="0" required>
+                </div>
+
+                <!-- Description Field -->
+                <input type="text" name="description" id="descInput" class="dock-input desc-field" placeholder="What did you resist buying?" required>
+
+                <!-- Tag Selector -->
+                <select name="tag" id="tagInput" class="dock-input tag-select">
+                    <option value="#SpiteSave">#SpiteSave</option>
+                    <option value="#Impulse">#Impulse</option>
+                    <option value="#FoodDelivery">#FoodDelivery</option>
+                    <option value="#Commute">#Commute</option>
+                    <option value="#DailyWin">#DailyWin</option>
+                    <option value="#Subscription">#Subscription</option>
+                    <option value="#BrokeStreak">#BrokeStreak</option>
+                </select>
+
+                <!-- Action Button -->
+                <button type="submit" id="dockSubmitBtn" class="btn-dock-submit submit-save">
+                    Drop in Pig 🪙
+                </button>
+            </form>
+        </div>
+    </footer>
+
+    <!-- 5. PAST GOALS TROPHY ROOM (Slide-Over Drawer) -->
+    <div id="trophyDrawerBackdrop" class="drawer-backdrop hidden" onclick="toggleDrawer(false)"></div>
+    <aside id="trophyDrawer" class="trophy-drawer hidden">
+        <div class="drawer-header">
+            <h2>🏆 Past Goals Trophy Room</h2>
+            <button type="button" class="btn-close-drawer" onclick="toggleDrawer(false)">✕</button>
+        </div>
+
+        <div class="lifetime-banner">
+            <span class="lifetime-label">Total Impulse Cash Rescued</span>
+            <span class="lifetime-value">₹{{ "{:,.0f}".format(lifetime_saved) }}</span>
+        </div>
+
+        <div class="trophy-list">
+            {% if past_goals_data|length == 0 %}
+                <p class="empty-trophy">Complete your first savings goal to unlock your victory receipts here!</p>
+            {% else %}
+                {% for item in past_goals_data %}
+                    <div class="trophy-card">
+                        <div class="trophy-card-top">
+                            <h3>{{ item.goal.title }}</h3>
+                            <span class="trophy-target">₹{{ "{:,.0f}".format(item.goal.target_amount) }}</span>
+                        </div>
+                        <p class="trophy-date">
+                            ✅ Achieved {{ item.goal.completed_at.strftime('%b %d, %Y') if item.goal.completed_at else 'Recently' }}
+                            ({{ item.duration_days }} {{ 'day' if item.duration_days == 1 else 'days' }} &bull; {{ item.saves_count }} spite saves)
+                        </p>
+                        <div class="trophy-stat">
+                            Top Resisted Habit: <strong>{{ item.top_tag }}</strong> (₹{{ "{:,.0f}".format(item.top_tag_sum) }} saved)
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- 6. START NEW GOAL / RESET CEREMONY MODAL -->
+    {% if goal.completed %}
+    <div id="resetModalBackdrop" class="modal-backdrop hidden">
+        <div class="reset-modal">
+            <div class="modal-badge">🎉 Goal Smashed!</div>
+            <h2 class="modal-title">You conquered "{{ goal.title }}"!</h2>
+            <p class="modal-subtitle">
+                You stacked <strong>₹{{ "{:,.0f}".format(goal.current_amount) }}</strong> against a target of ₹{{ "{:,.0f}".format(goal.target_amount) }}. Ready to set your next target?
+            </p>
+
+            <form method="POST" action="{{ url_for('index.start_new_goal') }}" class="reset-form">
+                <input type="hidden" name="old_goal_id" value="{{ goal.id }}">
+
+                <div class="form-group">
+                    <label class="form-label">New Goal Name</label>
+                    <input type="text" name="title" class="form-control" placeholder="e.g., Emergency Fund or Sony Headphones" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Target Amount (₹)</label>
+                    <input type="number" step="1" min="100" name="target_amount" class="form-control" placeholder="25000" required>
+                </div>
+
+                {% if goal.current_amount > goal.target_amount %}
+                <label class="rollover-check">
+                    <input type="checkbox" name="rollover" checked>
+                    <span>Roll over surplus <strong>₹{{ "{:,.0f}".format(goal.current_amount - goal.target_amount) }}</strong> into this new piggy bank</span>
+                </label>
+                {% endif %}
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-submit">Empty Piggy &amp; Start Goal</button>
+                    <button type="button" class="btn-cancel-modal" onclick="toggleResetModal(false)">Keep Viewing Current Ledger</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- INTERACTIVE SCRIPTS -->
+    <script>
+        // 1. Toggle Save / Spend Mode in Bottom Dock
+        function setMode(mode) {
+            const typeInput = document.getElementById('txTypeInput');
+            const btnSave = document.getElementById('btnModeSave');
+            const btnSpend = document.getElementById('btnModeSpend');
+            const descInput = document.getElementById('descInput');
+            const submitBtn = document.getElementById('dockSubmitBtn');
+            const tagSelect = document.getElementById('tagInput');
+
+            typeInput.value = mode;
+            if (mode === 'save') {
+                btnSave.className = 'mode-btn active-save';
+                btnSpend.className = 'mode-btn';
+                descInput.placeholder = 'What did you resist buying?';
+                submitBtn.textContent = 'Drop in Pig 🪙';
+                submitBtn.className = 'btn-dock-submit submit-save';
+                tagSelect.value = '#SpiteSave';
+            } else {
+                btnSave.className = 'mode-btn';
+                btnSpend.className = 'mode-btn active-spend';
+                descInput.placeholder = 'Where did the money go?';
+                submitBtn.textContent = 'Log Spend 💸';
+                submitBtn.className = 'btn-dock-submit submit-spend';
+                tagSelect.value = '#BrokeStreak';
+            }
+        }
+
+        // 2. Quick-Spite 1-Tap Fill
+        function quickFill(mode, amount, desc, tag) {
+            setMode(mode);
+            document.getElementById('amountInput').value = amount;
+            document.getElementById('descInput').value = desc;
+            document.getElementById('tagInput').value = tag;
+            document.getElementById('txForm').submit();
+        }
+
+        // 3. Inline Goal Edit Popover
+        function toggleGoalEdit() {
+            const form = document.getElementById('goalEditForm');
+            if (form) form.classList.toggle('hidden');
+        }
+
+        // 4. Past Goals Drawer
+        function toggleDrawer(show) {
+            document.getElementById('trophyDrawer').classList.toggle('hidden', !show);
+            document.getElementById('trophyDrawerBackdrop').classList.toggle('hidden', !show);
+        }
+
+        // 5. Reset Goal Modal
+        function toggleResetModal(show) {
+            const modal = document.getElementById('resetModalBackdrop');
+            if (modal) modal.classList.toggle('hidden', !show);
+        }
+
+        // 6. Scrollytelling Coin Orchestration (Option A)
+        const piggyContainer = document.getElementById('piggyContainer');
+        const floatingCoin = document.getElementById('floatingCoin');
+
+        function triggerPigAnimation(txType) {
+            if (!piggyContainer || !floatingCoin) return;
+            floatingCoin.className = 'floating-coin';
+            piggyContainer.classList.remove('pig-bounce', 'pig-drain');
+            void piggyContainer.offsetWidth; // Force reflow
+
+            if (txType === 'save') {
+                floatingCoin.textContent = '+₹';
+                floatingCoin.classList.add('coin-drop-anim');
+                piggyContainer.classList.add('pig-bounce');
+            } else {
+                floatingCoin.textContent = '-₹';
+                floatingCoin.classList.add('coin-drain-anim');
+                piggyContainer.classList.add('pig-drain');
+            }
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    const txType = entry.target.getAttribute('data-tx-type');
+                    triggerPigAnimation(txType);
+                }
+            });
+        }, { threshold: 0.65, rootMargin: "-180px 0px -120px 0px" });
+
+        document.querySelectorAll('.ledger-item').forEach(item => observer.observe(item));
+
+        // 7. Confetti Burst on 100% Goal Completion
+        const urlParams = new URLSearchParams(window.location.search);
+        const isCompleted = {{ 'true' if goal.completed else 'false' }};
+        if (urlParams.get('celebrated') === '1' || isCompleted) {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 110,
+                    spread: 80,
+                    origin: { y: 0.35 },
+                    colors: ['#284B3D', '#D49B35', '#C84B31', '#F6D365']
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+</file>
 
 <file path="app/static/styles/main.css">
 :root {
@@ -309,6 +842,134 @@ body {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email - Spite Saver</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #F8F5EE;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1E2220;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #F8F5EE;
+      padding: 40px 0;
+    }
+    .main {
+      background-color: #FFFFFF;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 12px;
+      border: 1px solid #E0D7C6;
+      box-shadow: 0 4px 12px rgba(30, 34, 32, 0.05);
+      overflow: hidden;
+    }
+    .header {
+      padding: 32px 32px 24px 32px;
+      text-align: center;
+      border-bottom: 1px solid #F0EBE1;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #284B3D;
+      letter-spacing: -0.5px;
+      margin: 0;
+    }
+    .content {
+      padding: 32px;
+    }
+    .greeting {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1E2220;
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+    .message {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #7A766D;
+      margin-bottom: 28px;
+    }
+    .code-container {
+      background-color: #F0EBE1;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 28px;
+      border: 1px dashed #D49B35;
+    }
+    .code-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #7A766D;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .verification-code {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      color: #284B3D;
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+    }
+    .footer {
+      padding: 24px 32px;
+      background-color: #FAF8F5;
+      border-top: 1px solid #F0EBE1;
+      text-align: center;
+      font-size: 12px;
+      color: #7A766D;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <table class="main" align="center" cellpadding="0" cellspacing="0">
+      <tr>
+        <td class="header">
+          <h1 class="brand-title">Spite Saver</h1>
+        </td>
+      </tr>
+      <tr>
+        <td class="content">
+          <h2 class="greeting">Verify your email address</h2>
+          <p class="message">
+            Thanks for getting started with Spite Saver! Use the security code below to complete your registration. This code is valid for 10 minutes.
+          </p>
+          <div class="code-container">
+            <div class="code-label">Verification Code</div>
+            <div class="verification-code">{{ code }}</div>
+          </div>
+          <p class="message" style="margin-bottom: 0; font-size: 13px;">
+            If you did not request this code, you can safely ignore this email.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td class="footer">
+          &copy; Spite Saver &bull; Automated security notification
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
+</file>
+
+<file path="app/templates/verification.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Account - Spite Saver</title>
@@ -374,13 +1035,163 @@ body {
 </html>
 </file>
 
+<file path="app/__init__.py">
+"""
+Created on 28 October 2026 08:00:00 AM IST
+
+@uthor: $ujay $imha
+contributors: rgo75, $aket νiraj
+"""
+
+from flask import Flask
+from config import DevelopmentConfig
+from .exts import db, migrate, login_manager
+from .main import index
+from .auth import auth
+from .models import *
+
+def register_blueprints(app):
+    app.register_blueprint(index)
+    app.register_blueprint(auth)
+
+def register_extensions(app):
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+    login_manager.login_view = "auth.login" #pyright:ignore
+
+def create_app(config=DevelopmentConfig):
+    app = Flask(__name__)
+    app.config.from_object(config)
+
+    register_blueprints(app)
+    register_extensions(app)
+
+    return app
+</file>
+
+<file path="app/exts.py">
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_login import LoginManager
+
+db = SQLAlchemy()
+migrate = Migrate()
+login_manager = LoginManager()
+</file>
+
+<file path="app/forms.py">
+from flask_wtf import FlaskForm
+from wtforms.fields import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired
+
+
+class SignUpForm(FlaskForm):
+    username = StringField(validators=[DataRequired()])
+    email = StringField(validators=[DataRequired()])
+    password = PasswordField(validators=[DataRequired()])
+    submit = SubmitField()
+
+class LoginForm(FlaskForm):
+    email = StringField(validators=[DataRequired()])
+    password = PasswordField(validators=[DataRequired()])
+    submit = SubmitField()
+
+class VerifyForm(FlaskForm):
+    code = StringField(validators=[DataRequired()])
+    submit = SubmitField()
+</file>
+
+<file path="app/main.py">
+from flask import Blueprint
+from flask_login import login_required
+
+index = Blueprint("index", __name__)
+
+@index.route("/", methods=["GET"])
+@login_required
+def index_page():
+    return ""
+</file>
+
+<file path="config.py">
+import os
+import dotenv
+
+cwd = os.getcwd()
+dotenv.load_dotenv()
+
+class Config:
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{cwd}/db.sqlite"
+    MAIL_SERVER = "smtp.gmail.com"
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USE_SSL = False
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    FLASK_ENV = "development"
+    ENV = "development"
+
+class ProductionConfig(Config):
+    DEBUG = False
+    FLASK_ENV = "production"
+    ENV = "production"
+
+class TestConfig(Config):
+    FLASK_SQLALCHEMY_URI = "sqlite://"
+    DEBUG = False
+    FLASK_ENV = "testing"
+    ENV = "testing"
+</file>
+
+<file path="requirements.txt">
+alembic==1.19.2
+blinker==1.9.0
+click==8.5.0
+dotenv==0.9.9
+Flask==3.1.3
+flask-form==1.0.0
+Flask-Login==0.6.3
+Flask-Migrate==4.1.0
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.3.0
+greenlet==3.5.5
+itsdangerous==2.2.0
+Jinja2==3.1.6
+Mako==1.4.1
+MarkupSafe==3.0.3
+python-dotenv==1.2.3
+SQLAlchemy==2.0.52
+typing_extensions==4.16.0
+Werkzeug==3.1.8
+WTForms==3.2.2
+</file>
+
+<file path="run.py">
+from app import create_app
+from config import DevelopmentConfig
+
+app = create_app(DevelopmentConfig)
+
+if __name__ == "__main__":
+    app.run()
+</file>
+
+<file path="shelltools.py">
+from app.exts import db
+</file>
+
 <file path="app/templates/login.html">
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Spite Saver</title>
+    <title>Login - Spite Saver</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -393,12 +1204,12 @@ body {
             <img src="{{ url_for('static', filename='assets/icon.png') }}" alt="Spite Saver Icon" class="logo-icon">
             <span>Spite Saver</span>
         </a>
-        <a href="{{ url_for('auth.login') }}" class="nav-link">Log In</a>
+        <a href="{{ url_for('auth.signup') }}" class="nav-link">Sign Up</a>
     </header>
 
     <main class="main-content">
         <div class="auth-card">
-            <h1 class="auth-title">Start Saving</h1>
+            <h1 class="auth-title">Welcome Back</h1>
             
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -414,21 +1225,16 @@ body {
                 {{ form.hidden_tag() }}
                 
                 <div class="form-group">
-                    <label class="form-label" for="username">Username</label>
-                    {{ form.username(class="form-control", placeholder="Choose a username") }}
-                </div>
-
-                <div class="form-group">
                     <label class="form-label" for="email">Email</label>
                     {{ form.email(class="form-control", placeholder="Enter your email") }}
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="password">Password</label>
-                    {{ form.password(class="form-control", placeholder="Create a password") }}
+                    {{ form.password(class="form-control", placeholder="Enter your password") }}
                 </div>
                 
-                {{ form.submit(class="btn-submit", value="Sign Up") }}
+                {{ form.submit(class="btn-submit", value="Log In") }}
             </form>
         </div>
     </main>
@@ -496,40 +1302,6 @@ body {
     </main>
 </body>
 </html>
-</file>
-
-<file path="app/__init__.py">
-"""
-Created on <DateTime>
-
-@uthor: $ujay $imha
-"""
-
-from flask import Flask
-from config import DevelopmentConfig
-from .exts import db, migrate, login_manager
-from .main import index
-from .auth import auth
-from .models import *
-
-def register_blueprints(app):
-    app.register_blueprint(index)
-    app.register_blueprint(auth)
-
-def register_extensions(app):
-    db.init_app(app)
-    migrate.init_app(app, db)
-    login_manager.init_app(app)
-    login_manager.login_view = "auth.login" #pyright:ignore
-
-def create_app(config=DevelopmentConfig):
-    app = Flask(__name__)
-    app.config.from_object(config)
-
-    register_blueprints(app)
-    register_extensions(app)
-
-    return app
 </file>
 
 <file path="app/auth.py">
@@ -620,7 +1392,7 @@ def verify(current_user_id):
         #msg.html = render_template("verification_email.html", code=session["verification_code"])
         #with mail.connect() as conn:
         #    conn.send(msg)
-        subject = "Welcome to ClassLog!"
+        subject = "Welcome to Spite Saver!"
         body = render_template("verification_email.html", code=session["verification_code"])
         msg = MIMEMultipart()
         msg["From"] = Config.MAIL_USERNAME #pyright:ignore
@@ -629,6 +1401,7 @@ def verify(current_user_id):
         msg.attach(MIMEText(body, "html"))
 
         try:
+            print(Config.MAIL_USERNAME, Config.MAIL_PASSWORD) #pyright:ignore
             server = smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT)
             server.ehlo()
             server.starttls()
@@ -660,7 +1433,7 @@ def verify(current_user_id):
         else:
             flash("Codes don't match!")
 
-    return render_template("verification_email.html", email=email, form=VerifyForm(), current_user_id=current_user_id)
+    return render_template("verification.html", email=email, form=VerifyForm(), current_user_id=current_user_id)
 
 @auth.route("/auth/resend-verification-code", methods=["GET", "POST"])
 def resend_code():
@@ -676,50 +1449,6 @@ def logout():
     return redirect(url_for("auth.login"))
 </file>
 
-<file path="app/exts.py">
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
-
-db = SQLAlchemy()
-migrate = Migrate()
-login_manager = LoginManager()
-</file>
-
-<file path="app/forms.py">
-from flask_wtf import FlaskForm
-from wtforms.fields import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired
-
-
-class SignUpForm(FlaskForm):
-    username = StringField(validators=[DataRequired()])
-    email = StringField(validators=[DataRequired()])
-    password = PasswordField(validators=[DataRequired()])
-    submit = SubmitField()
-
-class LoginForm(FlaskForm):
-    email = StringField(validators=[DataRequired()])
-    password = PasswordField(validators=[DataRequired()])
-    submit = SubmitField()
-
-class VerifyForm(FlaskForm):
-    code = StringField(validators=[DataRequired()])
-    submit = SubmitField()
-</file>
-
-<file path="app/main.py">
-from flask import Blueprint
-from flask_login import login_required
-
-index = Blueprint("index", __name__)
-
-@index.route("/", methods=["GET"])
-@login_required
-def index_page():
-    return ""
-</file>
-
 <file path="app/models.py">
 from flask_login import UserMixin
 from .exts import db, login_manager
@@ -731,6 +1460,23 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     verified = db.Column(db.Boolean, default=False)
+
+class Goal(db.Model):
+    __tablename__ = 'goals'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(5), db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    completed_at = db.Column(db.DateTime, nullable=True)
+    target_amount = db.Column(db.Float, nullable=False)
+    current_amount = db.Column(db.Float, default=0.0)
+
+class Transaction(db.Model):
+    __tablename__ = 'transactions'
+    id = db.Column(db.Integer, primary_key=True)
+    goal_id = db.Column(db.Integer, db.ForeignKey('goals.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    tag = db.Column(db.String(100), nullable=True)
 
 @login_manager.user_loader
 def load_user(uid):
@@ -748,77 +1494,7 @@ __pycache__/
 db.sqlite
 migrations/
 .idea/
-</file>
-
-<file path="config.py">
-import os
-import dotenv
-
-cwd = os.getcwd()
-dotenv.load_dotenv()
-
-class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{cwd}/db.sqlite"
-    MAIL_SERVER = "smtp.gmail.com"
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
-    MAIL_USE_SSL = False
-    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
-    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-
-class DevelopmentConfig(Config):
-    DEBUG = True
-    FLASK_ENV = "development"
-    ENV = "development"
-
-class ProductionConfig(Config):
-    DEBUG = False
-    FLASK_ENV = "production"
-    ENV = "production"
-
-class TestConfig(Config):
-    FLASK_SQLALCHEMY_URI = "sqlite://"
-    DEBUG = False
-    FLASK_ENV = "testing"
-    ENV = "testing"
-</file>
-
-<file path="requirements.txt">
-alembic==1.19.2
-blinker==1.9.0
-click==8.5.0
-dotenv==0.9.9
-Flask==3.1.3
-flask-form==1.0.0
-Flask-Login==0.6.3
-Flask-Migrate==4.1.0
-Flask-SQLAlchemy==3.1.1
-Flask-WTF==1.3.0
-greenlet==3.5.5
-itsdangerous==2.2.0
-Jinja2==3.1.6
-Mako==1.4.1
-MarkupSafe==3.0.3
-python-dotenv==1.2.3
-SQLAlchemy==2.0.52
-typing_extensions==4.16.0
-Werkzeug==3.1.8
-WTForms==3.2.2
-</file>
-
-<file path="run.py">
-from app import create_app
-from config import DevelopmentConfig
-
-app = create_app(DevelopmentConfig)
-
-if __name__ == "__main__":
-    app.run()
-</file>
-
-<file path="shelltools.py">
-from app.exts import db
+repomix-output.xml
 </file>
 
 </files>
