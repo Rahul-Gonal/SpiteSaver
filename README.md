@@ -159,7 +159,7 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 ## 👥 The Argonauts
 - **Sujay Simha** ([@SujaySimha2](https://github.com/SujaySimha2))
-- **rgo75**
-- **Saket Viraj**
+- **rgo75** ([Rahul G](https://github.com/Rahul-Gonal))
+- **Saket Viraj**([Saket Viraj](https://github.com/saket703))
 
 Built with defiance for **DECACODE 2026**.
