@@ -85,7 +85,7 @@ def verify(current_user_id):
         #msg.html = render_template("verification_email.html", code=session["verification_code"])
         #with mail.connect() as conn:
         #    conn.send(msg)
-        subject = "Welcome to ClassLog!"
+        subject = "Welcome to Spite Saver!"
         body = render_template("verification_email.html", code=session["verification_code"])
         msg = MIMEMultipart()
         msg["From"] = Config.MAIL_USERNAME #pyright:ignore
@@ -94,6 +94,7 @@ def verify(current_user_id):
         msg.attach(MIMEText(body, "html"))
 
         try:
+            print(Config.MAIL_USERNAME, Config.MAIL_PASSWORD) #pyright:ignore
             server = smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT)
             server.ehlo()
             server.starttls()

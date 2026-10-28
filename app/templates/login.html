@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Spite Saver</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/icon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+</head>
+<body>
+    <header class="top-bar">
+        <a href="#" class="logo">
+            <img src="{{ url_for('static', filename='assets/icon.png') }}" alt="Spite Saver Icon" class="logo-icon">
+            <span>Spite Saver</span>
+        </a>
+        <a href="{{ url_for('auth.signup') }}" class="nav-link">Sign Up</a>
+    </header>
+
+    <main class="main-content">
+        <div class="auth-card">
+            <h1 class="auth-title">Welcome Back</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    {{ form.email(class="form-control", placeholder="Enter your email") }}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    {{ form.password(class="form-control", placeholder="Enter your password") }}
+                </div>
+                
+                {{ form.submit(class="btn-submit", value="Log In") }}
+            </form>
+        </div>
+    </main>
+</body>
+</html>

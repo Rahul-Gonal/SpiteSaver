@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Account - Spite Saver</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/icon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+</head>
+<body>
+    <header class="top-bar">
+        <a href="#" class="logo">
+            <img src="{{ url_for('static', filename='assets/icon.png') }}" alt="Spite Saver Icon" class="logo-icon">
+            <span>Spite Saver</span>
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="nav-link">Log In</a>
+    </header>
+
+    <main class="main-content">
+        <div class="auth-card">
+            <h1 class="auth-title">Verify Code</h1>
+            
+            <p class="verification-note">
+                Enter the 6-digit verification code sent to 
+                <span class="user-email">{{ email }}</span>
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category if category != 'message' else 'error' }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    <label class="form-label" for="code">Security Code</label>
+                    {{ form.code(
+                        class="form-control code-input", 
+                        placeholder="000000", 
+                        maxlength="6", 
+                        pattern="[0-9]{6}", 
+                        inputmode="numeric", 
+                        autocomplete="one-time-code"
+                    ) }}
+                </div>
+                
+                {{ form.submit(class="btn-submit", value="Verify and Continue") }}
+            </form>
+
+            <div class="resend-wrapper">
+                <span class="text-muted">Didn't receive a code?</span>
+                <a href="{{ url_for('auth.resend_code') }}" class="resend-link">Resend Code</a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
